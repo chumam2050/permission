@@ -1,8 +1,8 @@
 <?php
 
-namespace Chumam2050\Permission\Tests\Feature;
+namespace Choerulumam\Permission\Tests\Feature;
 
-use Chumam2050\Permission\Tests\TestCase;
+use Choerulumam\Permission\Tests\TestCase;
 use Illuminate\Support\Facades\File;
 
 class InstallCommandTest extends TestCase

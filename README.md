@@ -16,24 +16,24 @@ You can install the package locally by linking it in your `composer.json` or by 
 
 ### Local Installation
 
-If this package is in a local directory (e.g., `packages/chumam2050/permission`), add it to your main `composer.json`:
+If this package is in a local directory (e.g., `packages/choerulumam/permission`), add it to your main `composer.json`:
 
 ```json
 "repositories": [
     {
         "type": "path",
-        "url": "packages/chumam2050/permission"
+        "url": "packages/choerulumam/permission"
     }
 ],
 "require": {
-    "chumam2050/permission": "*"
+    "choerulumam/permission": "*"
 }
 ```
 
 Then run:
 
 ```bash
-composer require chumam2050/permission
+composer require choerulumam/permission
 ```
 
 ## Setup & Scaffolding

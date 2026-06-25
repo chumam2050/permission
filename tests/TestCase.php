@@ -1,9 +1,9 @@
 <?php
 
-namespace Chumam2050\Permission\Tests;
+namespace Choerulumam\Permission\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use Chumam2050\Permission\PermissionServiceProvider;
+use Choerulumam\Permission\PermissionServiceProvider;
 
 class TestCase extends Orchestra
 {

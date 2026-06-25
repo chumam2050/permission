@@ -1,8 +1,8 @@
 <?php
 
-namespace Chumam2050\Permission\Tests\Feature;
+namespace Choerulumam\Permission\Tests\Feature;
 
-use Chumam2050\Permission\Tests\PublishedTestCase;
+use Choerulumam\Permission\Tests\PublishedTestCase;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use App\Models\User;
@@ -43,7 +43,7 @@ class ControllersTest extends PublishedTestCase
         $response = $this->getJson("/groups/{$group->id}/permissions");
 
         $response->assertStatus(200);
-        $response->assertJsonStructure(['data', 'links', 'meta']);
+        $response->assertJsonStructure(['data', 'pagination']);
     }
 
     public function test_can_assign_permission_to_group()

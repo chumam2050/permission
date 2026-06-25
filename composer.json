@@ -1,12 +1,17 @@
 {
-    "name": "chumam2050/permission",
-    "description": "Permission module for Chumam2050",
-    "keywords": ["laravel", "permission", "role", "chumam2050"],
+    "name": "choerulumam/permission",
+    "description": "Permission module for Choerulumam",
+    "keywords": [
+        "laravel",
+        "permission",
+        "role",
+        "choerulumam"
+    ],
     "license": "MIT",
     "authors": [
         {
-            "name": "Chumam2050",
-            "email": "developer@chumam2050.com"
+            "name": "choerulumam",
+            "email": "choerulumam2050@gmail.com"
         }
     ],
     "type": "library",
@@ -16,12 +21,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Chumam2050\\Permission\\": "src/"
+            "Choerulumam\\Permission\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Chumam2050\\Permission\\Tests\\": "tests/",
+            "Choerulumam\\Permission\\Tests\\": "tests/",
             "App\\": "vendor/orchestra/testbench-core/laravel/app/"
         }
     },
@@ -32,7 +37,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Chumam2050\\Permission\\PermissionServiceProvider"
+                "Choerulumam\\Permission\\PermissionServiceProvider"
             ]
         }
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Chumam2050\Permission\Console\Commands;
+namespace Choerulumam\Permission\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;

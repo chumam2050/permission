@@ -1,8 +1,8 @@
 <?php
 
-namespace Chumam2050\Permission\Tests\Unit;
+namespace Choerulumam\Permission\Tests\Unit;
 
-use Chumam2050\Permission\Tests\PublishedTestCase;
+use Choerulumam\Permission\Tests\PublishedTestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 

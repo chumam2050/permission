@@ -54,7 +54,7 @@ final class PermissionLoader
     private static function loadPermissions(string $filename, string $moduleFolderName): array
     {
         $className = Str::studly(Str::before($filename, '.php'));
-        $permissionEnumClass = "Chumam2050\\Permission\\Permissions\\{$moduleFolderName}\\{$className}";
+        $permissionEnumClass = "Choerulumam\\Permission\\Permissions\\{$moduleFolderName}\\{$className}";
 
         return class_exists($permissionEnumClass)
             ? $permissionEnumClass::permissionsWithDesc()

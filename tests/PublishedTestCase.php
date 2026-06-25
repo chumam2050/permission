@@ -1,9 +1,9 @@
 <?php
 
-namespace Chumam2050\Permission\Tests;
+namespace Choerulumam\Permission\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use Chumam2050\Permission\PermissionServiceProvider;
+use Choerulumam\Permission\PermissionServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class PublishedTestCase extends Orchestra
@@ -38,9 +38,6 @@ class PublishedTestCase extends Orchestra
                     return response()->json(["message" => $message], $code);
                 }
             }');
-        }
-        if (!class_exists('App\\Http\\Resources\\GroupPermissionResource')) {
-            eval('namespace App\Http\Resources; use Illuminate\Http\Resources\Json\JsonResource; class GroupPermissionResource extends JsonResource { public function toArray($request) { return parent::toArray($request); } }');
         }
     }
 
