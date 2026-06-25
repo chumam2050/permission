@@ -1,0 +1,71 @@
+<?php
+
+namespace {{ namespace }}\Permissions;
+
+use {{ namespace }}\Enums\Module;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+
+final class PermissionLoader
+{
+    public static function loadAll(): array
+    {
+        return array_map([self::class, 'load'], Module::cases());
+    }
+
+    public static function load(Module $module): array
+    {
+        $moduleFolderName = Str::studly($module->value);
+        $directoryPath = __DIR__ . "/{$moduleFolderName}";
+
+        if (! self::isDirectoryAvailable($directoryPath)) {
+            return self::loaderResponse($module->value, []);
+        }
+
+        $permissions = self::gatherPermissionsFromFiles($directoryPath, $moduleFolderName);
+
+        return self::loaderResponse($module->value, $permissions);
+    }
+
+    private static function isDirectoryAvailable(string $directoryPath): bool
+    {
+        return File::isDirectory($directoryPath);
+    }
+
+    private static function gatherPermissionsFromFiles(string $directoryPath, string $moduleFolderName): array
+    {
+        $permissions = [];
+
+        foreach (self::getPhpFiles($directoryPath) as $file) {
+            $permissions = array_merge($permissions, self::loadPermissions($file->getFilename(), $moduleFolderName));
+        }
+
+        return $permissions;
+    }
+
+    private static function getPhpFiles(string $directoryPath): array
+    {
+        return array_filter(
+            File::files($directoryPath),
+            fn ($file) => Str::endsWith($file->getFilename(), '.php')
+        );
+    }
+
+    private static function loadPermissions(string $filename, string $moduleFolderName): array
+    {
+        $className = Str::studly(Str::before($filename, '.php'));
+        $permissionEnumClass = "Chumam2050\\Permission\\Permissions\\{$moduleFolderName}\\{$className}";
+
+        return class_exists($permissionEnumClass)
+            ? $permissionEnumClass::permissionsWithDesc()
+            : [];
+    }
+
+    private static function loaderResponse(string $moduleValue, array $permissions): array
+    {
+        return [
+            'module' => $moduleValue,
+            'permissions' => $permissions
+        ];
+    }
+}

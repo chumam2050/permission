@@ -1,0 +1,28 @@
+<?php
+
+namespace {{ namespace }}\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+#[Fillable([
+    'group_id',
+    'user_id',
+    'role',
+])]
+class GroupMember extends Model
+{
+    use HasFactory;
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'group_id', 'id');
+    }
+
+    public function user()
+    {
+        $userModel = config('auth.providers.users.model', \App\Models\User::class);
+        return $this->belongsTo($userModel, 'user_id', 'id');
+    }
+}

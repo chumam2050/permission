@@ -1,0 +1,31 @@
+{
+    "name": "chumam2050/permission",
+    "description": "Permission module for Chumam2050",
+    "type": "library",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0|^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chumam2050\\Permission\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Chumam2050\\Permission\\Tests\\": "tests/",
+            "App\\": "vendor/orchestra/testbench-core/laravel/app/"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^12.5"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Chumam2050\\Permission\\PermissionServiceProvider"
+            ]
+        }
+    }
+}

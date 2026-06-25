@@ -1,0 +1,60 @@
+<?php
+
+namespace {{ namespace }}\Permissions\Settings;
+
+use App\Permissions\PermissionContract;
+use App\Permissions\PermissionContractHelper;
+use {{ namespace }}\Enums\Module;
+
+enum User: string implements PermissionContract
+{
+    use PermissionContractHelper;
+
+    case VIEW = 'view';
+    case DELETE = 'delete';
+    case SHOW = 'show';
+    case UPDATE = 'update';
+    case CREATE = 'create';
+    case REGISTER_EMPLOYEE = 'register_employee';
+    case REGISTER_NON_EMPLOYEE = 'register_non_employee';
+
+    public static function module(): string
+    {
+        return Module::Settings->value;
+    }
+
+    public static function feature(): string
+    {
+        return 'user';
+    }
+
+    public static function tags(): array
+    {
+        return [];
+    }
+
+    public static function isMenu(): bool
+    {
+        return true;
+    }
+
+    public static function featureIcon(): string
+    {
+        return 'users';
+    }
+
+    public static function moduleIcon(): string
+    {
+        return 'users';
+    }
+
+    public static function featureOrder(): int
+    {
+        return 99;
+    }
+
+    public static function moduleOrder(): int
+    {
+        return 1;
+    }
+}

@@ -1,0 +1,24 @@
+<?php
+
+namespace {{ namespace }}\Permissions;
+
+interface PermissionContract
+{
+    public static function module(): string;
+
+    public static function feature(): string;
+
+    public static function values(): array;
+
+    public static function tags(): array;
+
+    public static function isMenu(): bool;
+
+    public static function featureIcon(): string;
+
+    public static function moduleIcon(): string;
+
+    public static function featureOrder(): int;
+
+    public static function moduleOrder(): int;
+}

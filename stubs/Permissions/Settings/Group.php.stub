@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }}\Permissions\Settings;
+
+use {{ namespace }}\Enums\Module;
+use App\Permissions\PermissionContract;
+use App\Permissions\PermissionContractHelper;
+
+enum Group: string implements PermissionContract
+{
+    use PermissionContractHelper;
+
+    case VIEW = 'view';
+    case SHOW = 'show';
+    case CREATE = 'create';
+    case UPDATE = 'update';
+    case DELETE = 'delete';
+
+    public static function module(): string
+    {
+        return Module::Settings->value;
+    }
+
+    public static function feature(): string
+    {
+        return 'group';
+    }
+
+    public static function tags(): array
+    {
+        return [];
+    }
+
+    public static function isMenu(): bool
+    {
+        return true;
+    }
+
+    public static function featureIcon(): string
+    {
+        return 'shield-plus';
+    }
+
+    public static function moduleIcon(): string
+    {
+        return 'hammer';
+    }
+
+    public static function featureOrder(): int
+    {
+        return 97;
+    }
+
+    public static function moduleOrder(): int
+    {
+        return 1;
+    }
+}

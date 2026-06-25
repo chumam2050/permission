@@ -1,0 +1,45 @@
+<?php
+
+namespace {{ namespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Enums\GroupRole;
+use App\Http\Resources\GroupMemberResource;
+use {{ namespace }}\Models\Group;
+use {{ namespace }}\Models\GroupMember;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
+
+class GroupMemberController extends Controller
+{
+    public function index(Group $group): AnonymousResourceCollection
+    {
+        return GroupMemberResource::collection(
+            $group->groupMembers()->with('user')->paginate(15)
+        );
+    }
+
+    public function store(Request $request, Group $group): JsonResponse
+    {
+        $data = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id', Rule::unique('group_members')->where('group_id', $group->id)],
+            'role' => ['required', Rule::in(GroupRole::values())],
+        ]);
+
+        $member = $group->groupMembers()->create($data);
+        $member->load('user');
+
+        return $this->successResponse(data: GroupMemberResource::make($member), message: __('messages.created'), status: 201);
+    }
+
+    public function destroy(Group $group, GroupMember $member): JsonResponse
+    {
+        abort_if($member->group_id !== $group->id, 404);
+
+        $member->delete();
+
+        return $this->successResponse(message: __('messages.deleted'));
+    }
+}

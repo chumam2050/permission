@@ -1,0 +1,174 @@
+<?php
+
+namespace {{ namespace }}\Policies;
+
+use App\Models\User;
+
+class BaseResourcePolicy
+{
+    protected string $viewAction = 'view';
+
+    protected string $showAction = 'show';
+
+    protected string $createAction = 'create';
+
+    protected string $updateAction = 'update';
+
+    protected string $deleteAction = 'delete';
+
+    /**
+     * @param  string  $module  The module name for permission checking.
+     * @param  string  $feature  The feature name for permission checking.
+     * @param  array  $compare  An array of comparison functions.
+     */
+    public function __construct(
+        protected string $module,
+        protected string $feature,
+        protected array $compare = []
+    ) {}
+
+    /**
+     * Parse the comparison arguments and execute the corresponding comparison function if it exists.
+     *
+     * @param  string  $action  The action name for which the comparison function is defined.
+     * @param  mixed  ...$args  The arguments to be passed to the comparison function.
+     * @return bool Returns true if the comparison function does not exist or returns true, otherwise
+     */
+    public function parseCompareArgs(string $action, ...$args): bool
+    {
+        if (! $this->compare) {
+            return true;
+        }
+        if (count($this->compare) === 0) {
+            return true;
+        }
+        if (! isset($this->compare[$action])) {
+            return true;
+        }
+        $compareFunction = $this->compare[$action];
+        if (! is_callable($compareFunction)) {
+            throw new \InvalidArgumentException('Compare function for action '.$action.' is not callable.');
+        }
+
+        return $compareFunction(...$args);
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     *
+     * @param  mixed  ...$args  The arguments to be passed to the comparison function.
+     * @return bool
+     */
+    public function view(...$args)
+    {
+        if (count($args) === 0) {
+            return false;
+        }
+        if (! $args[0] instanceof User) {
+            throw new \InvalidArgumentException('First argument must be an instance of User.');
+        }
+
+        return $this->parseCompareArgs($this->viewAction, ...$args) ||
+            $args[0]->allowed(
+                $this->module,
+                $this->feature,
+                $this->viewAction
+            );
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     *
+     * @param  mixed  ...$args  The arguments to be passed to the comparison function.
+     * @return bool
+     */
+    public function show(...$args)
+    {
+        if (count($args) === 0) {
+            return false;
+        }
+        if (! $args[0] instanceof User) {
+            throw new \InvalidArgumentException('First argument must be an instance of User.');
+        }
+        $user = $args[0];
+
+        return $this->parseCompareArgs($this->showAction, ...$args) ||
+            $user->allowed(
+                $this->module,
+                $this->feature,
+                $this->showAction
+            );
+    }
+
+    /**
+     * Determine whether the user can create models.
+     *
+     * @param  mixed  ...$args  The arguments to be passed to the comparison function.
+     * @return bool
+     */
+    public function create(...$args)
+    {
+        if (count($args) === 0) {
+            return false;
+        }
+        if (! $args[0] instanceof User) {
+            throw new \InvalidArgumentException('First argument must be an instance of User.');
+        }
+        $user = $args[0];
+
+        return $this->parseCompareArgs($this->createAction, ...$args) ||
+            $user->allowed(
+                $this->module,
+                $this->feature,
+                $this->createAction
+            );
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param  mixed  ...$args  The arguments to be passed to the comparison function.
+     * @return bool
+     */
+    public function update(...$args)
+    {
+        if (count($args) === 0) {
+            return false;
+        }
+        if (! $args[0] instanceof User) {
+            throw new \InvalidArgumentException('First argument must be an instance of User.');
+        }
+        $user = $args[0];
+
+        return $this->parseCompareArgs($this->updateAction, ...$args) ||
+            $user->allowed(
+                $this->module,
+                $this->feature,
+                $this->updateAction
+            );
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  mixed  ...$args  The arguments to be passed to the comparison function.
+     * @return bool
+     */
+    public function delete(...$args)
+    {
+        if (count($args) === 0) {
+            return false;
+        }
+        if (! $args[0] instanceof User) {
+            throw new \InvalidArgumentException('First argument must be an instance of User.');
+        }
+        $user = $args[0];
+
+        return $this->parseCompareArgs($this->deleteAction, ...$args) ||
+            $user->allowed(
+                $this->module,
+                $this->feature,
+                $this->deleteAction
+            );
+    }
+}

@@ -1,0 +1,71 @@
+<?php
+
+namespace {{ namespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\PermissionResource;
+use {{ namespace }}\Models\Permission;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class PermissionController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        return PermissionResource::collection(
+            Permission::when(
+                $request->filled('search'),
+                fn ($q) => $q->where('id', 'like', "%{$request->search}%")
+                    ->orWhere('module', 'like', "%{$request->search}%")
+                    ->orWhere('feature', 'like', "%{$request->search}%")
+                    ->orWhere('action', 'like', "%{$request->search}%")
+            )
+            ->orderBy($request->input('sort', 'id'), $request->input('order', 'asc'))
+            ->paginate($request->integer('total', 15))
+        );
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'module' => 'required|string|max:100',
+            'feature' => 'required|string|max:100',
+            'action' => 'required|string|max:100',
+            'description' => 'nullable|string|max:255',
+        ]);
+
+        $id = "{$validated['module']}:{$validated['feature']}:{$validated['action']}";
+
+        if (Permission::where('id', $id)->exists()) {
+            return $this->failedResponse(__('messages.already_exists'), 422);
+        }
+
+        $permission = Permission::create(array_merge($validated, ['id' => $id]));
+
+        return $this->successResponse(new PermissionResource($permission), __('messages.created'), 201);
+    }
+
+    public function show(Permission $permission): PermissionResource
+    {
+        return new PermissionResource($permission);
+    }
+
+    public function update(Request $request, Permission $permission): JsonResponse
+    {
+        $validated = $request->validate([
+            'description' => 'nullable|string|max:255',
+        ]);
+
+        $permission->update($validated);
+
+        return $this->successResponse(new PermissionResource($permission), __('messages.updated'));
+    }
+
+    public function destroy(Permission $permission): JsonResponse
+    {
+        $permission->delete();
+
+        return $this->successResponse(message: __('messages.deleted'));
+    }
+}

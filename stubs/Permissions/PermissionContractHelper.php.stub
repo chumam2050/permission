@@ -1,0 +1,105 @@
+<?php
+
+namespace {{ namespace }}\Permissions;
+
+use ReflectionEnum;
+
+trait PermissionContractHelper
+{
+    /**
+     * Generate the permission string for a given action.
+     */
+    public static function permission(self $action): string
+    {
+        return self::module().':'.self::feature().':'.$action->value;
+    }
+
+    public static function permissions(): array
+    {
+        return array_map(fn ($value) => self::permission($value), self::cases());
+    }
+
+    public static function permissionsWithDesc(): array
+    {
+        return array_map(fn ($value) => [
+            'action' => self::permission($value),
+            'is_menu' => self::isMenu(),
+            'module_icon' => self::moduleIcon(),
+            'feature_icon' => self::featureIcon(),
+            'feature_order' => self::featureOrder(),
+            'module_order' => self::moduleOrder(),
+            'description' => self::getDescription($value),
+        ], self::cases());
+    }
+
+    public static function module(): string
+    {
+        return '';
+    }
+
+    public static function feature(): string
+    {
+        return '';
+    }
+
+    public static function tags(): array
+    {
+        return [];
+    }
+
+    public static function isMenu(): bool
+    {
+        return false;
+    }
+
+    public static function moduleOrder(): int
+    {
+        return 0;
+    }
+
+    public static function featureOrder(): int
+    {
+        return 0;
+    }
+
+    public static function featureIcon(): string
+    {
+        return '';
+    }
+
+    public static function moduleIcon(): string
+    {
+        return '';
+    }
+
+    public static function values(): array
+    {
+        return array_map(fn ($case) => $case->value, self::cases());
+    }
+
+    /**
+     * Get the description from the docblock of the enum case.
+     */
+    public static function getDescription(self $case): ?string
+    {
+        // Use reflection to inspect the enum case
+        $reflection = new ReflectionEnum(self::class);
+        $unitCase = $reflection->getCase($case->name);  // Get the specific enum case
+
+        // Get the docblock of the case
+        $docComment = $unitCase->getDocComment();
+
+        // Extract the description from the docblock (we will parse the first line)
+        if ($docComment) {
+            $docComment = preg_replace('/\/\*\*(.*?)\*\//s', '$1', $docComment);
+            // Trim any leading * and whitespace from each line
+            $docComment = preg_replace('/^\s*\*/m', '', $docComment);
+            // Trim and get the first line as description
+            $description = strtok(trim($docComment), "\n");
+
+            return $description ? $description : null;
+        }
+
+        return null;
+    }
+}

@@ -1,0 +1,96 @@
+<?php
+
+namespace {{ namespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\GroupPermissionResource;
+use {{ namespace }}\Models\Group;
+use {{ namespace }}\Models\GroupPermission;
+use {{ namespace }}\Models\Permission;
+use {{ namespace }}\Services\PermissionMenuService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class GroupPermissionController extends Controller
+{
+    public function __construct(protected PermissionMenuService $service)
+    {
+    }
+
+    public function index(Request $request, Group $group): AnonymousResourceCollection
+    {
+        return GroupPermissionResource::collection(
+            $group->permissions()->with('permission')
+                ->paginate($request->integer('total', 100))
+        );
+    }
+
+    public function store(Request $request, Group $group): JsonResponse
+    {
+        $validated = $request->validate([
+            'permission_id' => 'required|string|exists:permissions,id',
+        ]);
+
+        $exists = GroupPermission::where('group_id', $group->id)
+            ->where('permission_id', $validated['permission_id'])
+            ->exists();
+
+        if ($exists) {
+            return $this->failedResponse(__('messages.already_exists'), 422);
+        }
+
+        $groupPermission = $group->permissions()->create($validated);
+
+        return $this->successResponse(
+            new GroupPermissionResource($groupPermission->load('permission')),
+            __('messages.created'),
+            201
+        );
+    }
+
+    public function destroy(Group $group, Permission $permission): JsonResponse
+    {
+        GroupPermission::where('group_id', $group->id)
+            ->where('permission_id', $permission->id)
+            ->delete();
+
+        return $this->successResponse(message: __('messages.deleted'));
+    }
+
+    public function permissionsByGroup(Group $group): JsonResponse
+    {
+        $permissions = $this->service->allByGroup($group->id);
+        return $this->successResponse($permissions);
+    }
+
+    public function menus(Group $group): JsonResponse
+    {
+        $permissions = $group->permissions()->pluck('permission_id')->toArray();
+        $menus = $this->service->fetchMenus($permissions);
+        return $this->successResponse($menus);
+    }
+
+    public function navigation(Request $request): JsonResponse
+    {
+        $permissionIds = GroupPermission::whereIn('group_id', $request->user()->groups()->pluck('groups.id'))
+            ->pluck('permission_id')
+            ->toArray();
+
+        $menus = $this->service->fetchMenus($permissionIds);
+
+        return $this->successResponse($menus);
+    }
+
+    public function featuresByModule(Group $group, string $module): JsonResponse
+    {
+        $features = $this->service->featuresByModule($group, $module);
+        return $this->successResponse($features);
+    }
+
+    public function actionsByFeature(Group $group, string $module, string $feature)
+    {
+        $actions = $this->service->actionsByFeature($group, $module, $feature);
+        return $this->successResponse($actions);
+    }
+}

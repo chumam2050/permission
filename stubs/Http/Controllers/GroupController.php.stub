@@ -1,0 +1,91 @@
+<?php
+
+namespace {{ namespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\GroupResource;
+use {{ namespace }}\Models\Group;
+use {{ namespace }}\Models\GroupMember;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use {{ namespace }}\Permissions\Settings\Group as P;
+
+class GroupController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        Gate::authorize(P::VIEW, Group::class);
+
+        return GroupResource::collection(
+            Group::when($request->filled('type'), function ($query) use ($request) {
+                $query->whereIn('type', explode(',', $request->input('type')));
+            })
+            ->searchData(['name'], $request->input('search', ''))
+            ->sortData($request->input('sort', 'updated_at'), $request->input('order', 'desc'))
+            ->paginate($request->integer('total', 15))
+        );
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        Gate::authorize(P::CREATE, Group::class);
+
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:100',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ]);
+
+        if (!isset($data['user_id'])) {
+            $userModel = config('auth.providers.users.model', \App\Models\User::class);
+            $data['user_id'] = $userModel::insertGetId([
+                'name' => 'Custom Group - ' . $data['name'],
+                'email' => Str::slug($data['name']) . config('app.group_email_domain'),
+                'password' => Str::password(16),
+            ]);
+        }
+
+        $record = Group::create($data);
+
+        GroupMember::create([
+            'group_id' => $record->id,
+            'user_id' => $data['user_id'],
+            'role' => 'owner',
+        ]);
+
+        return $this->successResponse(data: GroupResource::make($record), message: __('messages.created'), status: 201);
+    }
+
+    public function show(Group $group): GroupResource
+    {
+        Gate::authorize(P::SHOW, $group);
+
+        return GroupResource::make($group);
+    }
+
+    public function update(Request $request, Group $group): JsonResponse
+    {
+        Gate::authorize(P::UPDATE, $group);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'type' => 'sometimes|string|max:100',
+        ]);
+
+        $group->update($data);
+
+        return $this->successResponse(data: GroupResource::make($group), message: __('messages.updated'));
+    }
+
+    public function destroy(Group $group): JsonResponse
+    {
+        Gate::authorize(P::DELETE, $group);
+
+        $group->delete();
+
+        return $this->successResponse(message: __('messages.deleted'));
+    }
+}

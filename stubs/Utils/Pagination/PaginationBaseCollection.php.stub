@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }}\Utils\Pagination;
+
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class PaginationBaseCollection extends AnonymousResourceCollection
+{
+    /**
+     * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     */
+    public function paginationInformation($request, $paginated, $default): array
+    {
+        return [
+            'pagination' => [
+                'current_page' => $paginated['current_page'],
+                'items_total' => $paginated['total'],
+                'total_pages' => $paginated['last_page'],
+                'total_items' => $paginated['total'],
+            ],
+        ];
+    }
+}

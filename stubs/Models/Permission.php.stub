@@ -1,0 +1,37 @@
+<?php
+
+namespace {{ namespace }}\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use App\Utils\CommonScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+#[Fillable([
+    'id',
+    'description',
+    'module',
+    'feature',
+    'action',
+    'is_menu',
+    'order',
+    'feature_icon',
+    'module_icon',
+])]
+class Permission extends Model
+{
+    use CommonScope, HasFactory;
+    
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $casts = [
+        'is_menu' => 'boolean',
+    ];
+
+    public function groupPermissions()
+    {
+        return $this->hasMany(GroupPermission::class, 'permission_id', 'id');
+    }
+}

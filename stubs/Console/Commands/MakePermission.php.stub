@@ -1,0 +1,137 @@
+<?php
+
+namespace {{ namespace }}\Console\Commands;
+
+use {{ namespace }}\Enums\Module;
+use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Str;
+
+class MakePermission extends Command
+{
+    protected $signature = 'permission:make {module? : The module name (e.g., "Assessment")} {feature? : The feature name (e.g., "Category")} {tags? : The tags for the permission (e.g., "tag1,tag2")} {--resource : Include default resource actions (view, delete, show, update)}';
+
+    protected $description = 'Generate a permission enum file for the specified module and feature.';
+    protected Filesystem $files;
+
+    private $moduleOptionsProvider;
+
+    public function __construct(Filesystem $files, ?callable $moduleOptionsProvider = null)
+    {
+        parent::__construct();
+        $this->files = $files;
+        $this->moduleOptionsProvider = $moduleOptionsProvider ?? fn() => array_map(fn($case) => $case->name, Module::cases());
+    }
+
+    public function handle()
+    {
+        // Check if module is provided, if not, prompt the user to select one
+        $module = $this->argument('module') ?? $this->choice(
+            'Select a module',
+            $this->getModuleOptions()
+        );
+
+        // Check if feature is provided, if not, ask the user to enter it
+        $feature = $this->argument('feature') ?? $this->ask('Enter the feature name (e.g., "Category")');
+
+        // Check if --resource flag is set, otherwise ask user to confirm
+        $resourceActions = $this->confirm('Include default resource actions (view, delete, show, update)?', true);
+
+        // Capitalize the first letter of module and feature for naming conventions
+        $module = Str::studly($module);
+        $feature = Str::studly($feature);
+
+        // Tags can be provided as an argument or generated from the feature name
+        $tagsInput = $this->argument('tags');
+        $tags = $tagsInput ? array_map('trim', explode(',', $tagsInput)) : [];
+
+        // Generate permission file with selected options
+        $namespace = "App\\Permissions\\{$module}";
+        $className = "{$feature}";
+        $actions = $resourceActions ? ['view', 'delete', 'show', 'update'] : [];
+
+        $this->generateEnumFile($namespace, $className, $module, $feature, $actions, $tags);
+
+        $this->info("Permission enum for {$module} {$feature} created successfully.");
+    }
+
+    public function getModuleOptions(): array
+    {
+        return call_user_func($this->moduleOptionsProvider);
+    }
+
+    public function generateEnumFile(string $namespace, string $className, string $module, string $feature, array $actions, array $tags = [])
+    {
+        $directory = __DIR__ . "/../../Permissions/{$module}";
+        $filePath = "{$directory}/{$className}.php";
+
+        // Check if the file already exists
+        if ($this->files->exists($filePath)) {
+            $this->warn("The file {$className}.php already exists. Skipping generation.");
+
+            return;
+        }
+
+        if (! $this->files->isDirectory($directory)) {
+            $this->files->makeDirectory($directory, 0755, true);
+        }
+
+        $enumTemplate = $this->getEnumTemplate($namespace, $className, $module, $feature, $actions, $tags);
+        $this->files->put($filePath, $enumTemplate);
+    }
+
+    public function getEnumTemplate(string $namespace, string $className, string $module, string $feature, array $actions, array $tags): string
+    {
+        $moduleConst = 'Module::' . $module . '->value';
+        $featureConst = $feature;
+        $tagsArray = empty($tags) ? '[]' : "['" . implode("', '", $tags) . "']";
+
+        $cases = count($actions) === 0
+            ? ''
+            : implode("\n", array_map(fn($action) => '    case ' . strtoupper($action) . " = '{$action}';", $actions));
+
+        return <<<EOT
+<?php
+
+declare(strict_types=1);
+
+namespace {$namespace};
+
+use {{ namespace }}\Permissions\PermissionContract;
+use {{ namespace }}\Permissions\PermissionContractHelper;
+use {{ namespace }}\Enums\Module;
+
+enum {$className}: string implements PermissionContract
+{
+    use PermissionContractHelper;
+
+{$cases}
+
+    public static function module(): string
+    {
+        return {$moduleConst};
+    }
+
+    public static function feature(): string
+    {
+        return '{$featureConst}';
+    }
+
+    public static function tags(): array
+    {
+        return {$tagsArray};
+    }
+
+    public static function isMenu(): bool
+    {
+        return false;
+    }
+
+    public static function icon(): string
+    {
+        return 'circle-arrow-right';
+    }
+}
+EOT;
+    }
+}

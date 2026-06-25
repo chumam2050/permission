@@ -1,0 +1,132 @@
+<?php
+
+namespace {{ namespace }}\Services;
+
+use {{ namespace }}\Models\Group;
+use {{ namespace }}\Models\GroupPermission;
+use {{ namespace }}\Models\Permission;
+use Illuminate\Support\Collection;
+
+class PermissionMenuService
+{
+    public function fetchMenus(array $permissions = [], string $path = '/admin'): Collection
+    {
+        $_permissions = Permission::all();
+        $menus = $_permissions->where('is_menu', true)
+            ->filter(fn($p) => in_array($p->id, $permissions))
+            ->map(fn($p) => [
+                'module' => $p->module,
+                'feature' => $p->feature,
+                'feature_icon' => $p->feature_icon,
+                'module_icon' => $p->module_icon,
+                'feature_order' => $p->feature_order,
+                'module_order' => $p->module_order,
+                'route' => $path . '/' . str_replace('_', '-', $p->module) . '/' . str_replace('_', '-', $p->feature),
+            ])
+            ->unique('feature')
+            ->groupBy('module')
+            ->sortByDesc(fn($group) => $group->first()['module_order'] ?? 0)
+            ->map(fn($group, $module) => [
+                'id' => $module,
+                'label' => __($module),
+                'order' => $group->first()['module_order'] ?? 0,
+                'icon' => $group->first()['module_icon'] ?? 'circle-chevron-right',
+                'expanded' => false,
+                'children' => $group->sortByDesc('feature_order')->map(fn($item) => [
+                    'id' => $item['feature'],
+                    'label' => __($item['feature']),
+                    'icon' => $item['feature_icon'] ?? 'circle-chevron-right',
+                    'route' => $item['route'],
+                ])->values(),
+            ])
+            ->values();
+
+        return collect($menus);
+    }
+
+    public function allByGroup(int $groupId): Collection
+    {
+        $_permissions = Permission::all();
+        $menus = $_permissions->where(function ($p) {
+            return $p->is_menu || $p->module === 'reference';
+        })
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'module' => $p->module,
+                'feature' => $p->feature,
+                'feature_icon' => $p->feature_icon,
+                'module_icon' => $p->module_icon,
+                'feature_order' => $p->feature_order,
+                'module_order' => $p->module_order,
+            ])
+            ->unique('feature')
+            ->groupBy('module')
+            ->sortByDesc(fn($group) => $group->first()['module_order'] ?? 0)
+            ->map(function ($group, $module) use ($groupId, $_permissions) {
+                $hasModule = GroupPermission::where('group_id', $groupId)->where('permission_id', 'like', "$module%")->exists();
+                return [
+                    'id' => $module,
+                    'label' => __($module),
+                    'icon' => $group->first()['module_icon'] ?? 'circle-chevron-right',
+                    'order' => $group->first()['module_order'] ?? 0,
+                    'checked' => $hasModule,
+                    'children' => $hasModule ? $this->fetchFeaturesByModule($group, $_permissions, $groupId, $module) : collect(),
+                ];
+            })
+            ->values();
+
+        return collect($menus);
+    }
+
+    public function featuresByModule(Group $group, string $module): Collection
+    {
+        $_permissions = Permission::where('module', $module)->get();
+
+        $featuresList = $_permissions->map(fn($p) => [
+            'id' => $p->id,
+            'module' => $p->module,
+            'feature' => $p->feature,
+            'feature_icon' => $p->feature_icon,
+            'module_icon' => $p->module_icon,
+            'feature_order' => $p->feature_order,
+            'order' => $p->feature_order,
+        ])->unique('feature')
+            ->sortByDesc('order');
+
+        return $this->fetchFeaturesByModule($featuresList, $_permissions, $group->id, $module);
+    }
+
+    public function fetchFeaturesByModule(Collection $modules, Collection $permissions, int $groupId, string $module): Collection
+    {
+        return $modules->sortByDesc(fn($item) => $item['order'] ?? 0)
+            ->map(function ($item) use ($permissions, $groupId, $module) {
+                $hasFeature = GroupPermission::where('group_id', $groupId)->where('permission_id', 'like', "$module:{$item['feature']}%")->exists();
+                return [
+                    'id' => $item['feature'],
+                    'label' => __($item['feature']),
+                    'icon' => $item['feature_icon'] ?? 'circle-chevron-right',
+                    'checked' => $hasFeature,
+                    'order' => $item['order'] ?? 0,
+                    'actions' => $hasFeature ? $this->fetchActionsByFeature($permissions, $groupId, $module, $item['feature']) : collect()
+                ];
+            })->values();
+    }
+
+    public function actionsByFeature(Group $group, string $module, string $feature): Collection
+    {
+        $_permissions = Permission::where('module', $module)->where('feature', $feature)->get();
+        return $this->fetchActionsByFeature($_permissions, $group->id, $module, $feature);
+    }
+
+    public function fetchActionsByFeature(Collection $permissions, int $groupId, string $module, string $feature): Collection
+    {
+        return $permissions->where('module', $module)
+            ->where('feature', $feature)
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'action' => $p->action,
+                'description' => $p->description,
+                'checked' => GroupPermission::where('group_id', $groupId)->where('permission_id', $p->id)->exists(),
+            ])->values();
+    }
+}
